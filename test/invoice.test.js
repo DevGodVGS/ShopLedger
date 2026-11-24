@@ -26,16 +26,31 @@ test('checkout totals (pricing.computeTotals) for the sample orders', () => {
   assert.deepEqual(pick(pricing.computeTotals(orders[1008].items, '')), { subtotal: 500, discount: 0, tax: 90, total: 590 });
 });
 
-test('CURRENT BEHAVIOUR: invoice taxes every line at 18% and ignores the HSN slab', () => {
-  assert.deepEqual(invoice.computeInvoiceFigures(orders[1001]).rows.map((r) => r.gstPercent), [18, 18]);
-  assert.deepEqual(invoice.computeInvoiceFigures(orders[1007]).rows.map((r) => r.gstPercent), [18, 18]);
-  assert.deepEqual(pick(invoice.computeInvoiceFigures(orders[1001])), { subtotal: 610, discount: 0, tax: 109.8, total: 719.8 });
-  assert.deepEqual(pick(invoice.computeInvoiceFigures(orders[1007])), { subtotal: 1280, discount: 0, tax: 230.4, total: 1510.4 });
+test('invoice uses the HSN GST slab of each line', () => {
+  assert.deepEqual(invoice.computeInvoiceFigures(orders[1001]).rows.map((r) => r.gstPercent), [18, 5]);
+  assert.deepEqual(invoice.computeInvoiceFigures(orders[1007]).rows.map((r) => r.gstPercent), [12, 5]);
+  assert.deepEqual(pick(invoice.computeInvoiceFigures(orders[1001])), { subtotal: 610, discount: 0, tax: 66.9, total: 676.9 });
+  assert.deepEqual(pick(invoice.computeInvoiceFigures(orders[1007])), { subtotal: 1280, discount: 0, tax: 127, total: 1407 });
 });
 
-test('CURRENT BEHAVIOUR: invoice applies the coupon after tax and ignores the cap', () => {
-  assert.deepEqual(pick(invoice.computeInvoiceFigures(orders[1002])), { subtotal: 1020, discount: 120.36, tax: 183.6, total: 1083.24 });
-  assert.deepEqual(pick(invoice.computeInvoiceFigures(orders[1004])), { subtotal: 2240, discount: 264.32, tax: 403.2, total: 2378.88 });
+test('invoice applies the coupon (with its cap) before tax', () => {
+  assert.deepEqual(pick(invoice.computeInvoiceFigures(orders[1002])), { subtotal: 1020, discount: 102, tax: 45.9, total: 963.9 });
+  assert.deepEqual(pick(invoice.computeInvoiceFigures(orders[1004])), { subtotal: 2240, discount: 150, tax: 104.5, total: 2194.5 });
+});
+
+test('invoice matches checkout for every sample order, CGST + SGST = GST', () => {
+  Object.keys(orders).forEach((id) => {
+    const o = orders[id];
+    const inv = invoice.computeInvoiceFigures(o);
+    assert.deepEqual(pick(inv), pick(pricing.computeTotals(o.items, o.coupon)), 'order #' + id);
+    assert.equal(Math.round((inv.cgst + inv.sgst) * 100) / 100, inv.tax, 'order #' + id);
+  });
+});
+
+test('rendered invoice shows the checkout total and no reconciliation notice', () => {
+  const html = invoice.render(Object.assign({ date: '05/01/2022', total: 963.9 }, orders[1002]));
+  assert.match(html, /Invoice Total<\/td><td class="r">₹963\.90/);
+  assert.doesNotMatch(html, /Reconciliation Notice/);
 });
 
 test('all-18% order with no coupon already matches checkout', () => {

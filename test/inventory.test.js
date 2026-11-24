@@ -25,21 +25,21 @@ test('sellable stock is stock minus reserved', () => {
   assert.equal(inventory.getSellableStock(db.products[2]), 18);
 });
 
-test('CURRENT BEHAVIOUR: buying exactly the last sellable unit is refused', () => {
+test('buying exactly the last sellable unit is allowed', () => {
   const db = makeDb();
-  const r = inventory.check(db.products, [line(P.ghee, 1)]);
-  assert.deepEqual(r, { ok: false, msg: 'A2 Gir Cow Ghee 500ml is out of stock (1 sellable available)' });
-  assert.equal(inventory.check(db.products, [line(P.chilli, 1)]).ok, false);
+  assert.deepEqual(inventory.check(db.products, [line(P.ghee, 1)]), { ok: true });
+  assert.deepEqual(inventory.check(db.products, [line(P.chilli, 1)]), { ok: true });
 });
 
 test('more than the sellable quantity is refused; qty 0 passes the check', () => {
   const db = makeDb();
-  assert.equal(inventory.check(db.products, [line(P.ghee, 2)]).ok, false);
+  assert.deepEqual(inventory.check(db.products, [line(P.ghee, 2)]), { ok: false, msg: 'A2 Gir Cow Ghee 500ml is out of stock (1 sellable available)' });
+  assert.equal(inventory.check(db.products, [line(P.chilli, 2)]).ok, false);
   assert.equal(inventory.check(db.products, [line(P.ghee, 0)]).ok, true);
   assert.equal(inventory.check(db.products, [{ id: 999, qty: 1 }]).ok, false);
 });
 
-test('CURRENT BEHAVIOUR: cancelling a pending order does not return stock', () => {
+test('cancelling a pending order returns its items to stock exactly once', () => {
   const db = makeDb();
   const oil = db.products[2];
   const items = [line(P.sunOil, 2)];
@@ -52,8 +52,8 @@ test('CURRENT BEHAVIOUR: cancelling a pending order does not return stock', () =
   const r = orders.cancel(db, order.id, 'test');
   assert.equal(r.ok, true);
   assert.equal(order.status, 'cancelled');
-  assert.deepEqual([oil.stock, oil.reserved], [20, 4]);
+  assert.deepEqual([oil.stock, oil.reserved], [22, 4]);
 
   assert.equal(orders.cancel(db, order.id).ok, false); // second cancel refused
-  assert.deepEqual([oil.stock, oil.reserved], [20, 4]);
+  assert.deepEqual([oil.stock, oil.reserved], [22, 4]);
 });

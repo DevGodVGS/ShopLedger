@@ -18,19 +18,21 @@ function makeDb() {
 
 function ids(list) { return list.map((o) => o.id); }
 
-test('CURRENT BEHAVIOUR: default order sorts DD/MM/YYYY as text, not newest first', () => {
-  assert.deepEqual(ids(orders.list(makeDb(), {})), [1004, 1001, 1008, 1002, 1005]);
+test('default order is newest first by real date', () => {
+  assert.deepEqual(ids(orders.list(makeDb(), {})), [1008, 1005, 1004, 1002, 1001]);
 });
 
-test('CURRENT BEHAVIOUR: from/to filters (YYYY-MM-DD) compare DD/MM/YYYY as text', () => {
-  assert.deepEqual(ids(orders.list(makeDb(), { from: '2022-01-01' })), [1004, 1001, 1008, 1002, 1005]);
-  assert.deepEqual(ids(orders.list(makeDb(), { to: '2022-01-31' })), [1004, 1001, 1008, 1002, 1005]);
-  assert.deepEqual(ids(orders.list(makeDb(), { from: '2022-02-01', to: '2022-02-28' })), [1008, 1002, 1005]);
+test('from/to filters (YYYY-MM-DD from the date picker) work on DD/MM/YYYY data, inclusive', () => {
+  assert.deepEqual(ids(orders.list(makeDb(), { from: '2022-01-01' })), [1008, 1005, 1004, 1002]);
+  assert.deepEqual(ids(orders.list(makeDb(), { to: '2022-01-31' })), [1004, 1002, 1001]);
+  assert.deepEqual(ids(orders.list(makeDb(), { from: '2022-02-01', to: '2022-02-28' })), [1005]);
+  assert.deepEqual(ids(orders.list(makeDb(), { from: '2022-03-15', to: '2022-03-15' })), [1008]);
 });
 
-test('CURRENT BEHAVIOUR: normalizeDateKey turns YYYY-MM-DD into DD/MM/YYYY', () => {
-  assert.equal(dates.normalizeDateKey('2022-03-15'), '15/03/2022');
-  assert.equal(dates.normalizeDateKey('15/03/2022'), '15/03/2022');
+test('normalizeDateKey returns a sortable YYYY-MM-DD key for both formats', () => {
+  assert.equal(dates.normalizeDateKey('2022-03-15'), '2022-03-15');
+  assert.equal(dates.normalizeDateKey('15/03/2022'), '2022-03-15');
+  assert.equal(dates.normalizeDateKey('5/1/2022'), '2022-01-05');
   assert.equal(dates.normalizeDateKey(''), '');
 });
 

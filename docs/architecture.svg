@@ -87,8 +87,8 @@
   <rect x="660" y="92" width="160" height="50" rx="8" class="box t3"/>
   <text x="672" y="114" class="t">inventory.js</text>
   <text x="672" y="131" class="s">check, reserve, release</text>
-  <circle cx="810" cy="100" r="10" class="n"/><text x="810" y="104" class="nt">3</text>
-  <circle cx="788" cy="100" r="10" class="n"/><text x="788" y="104" class="nt">6</text>
+  <circle cx="788" cy="100" r="10" class="n"/><text x="788" y="104" class="nt">3</text>
+  <circle cx="810" cy="100" r="10" class="n"/><text x="810" y="104" class="nt">6</text>
 
   <rect x="660" y="152" width="160" height="50" rx="8" class="box t2"/>
   <rect x="664" y="156" width="152" height="42" rx="6" fill="none" class="t3"/>
@@ -126,7 +126,7 @@
   <text x="203" y="152" class="s">fetch</text>
   <path d="M110 268 V246" class="ln"/>
   <path d="M430 177 H476" class="ln"/>
-  <path d="M640 160 C650 160 650 120 656 117" class="ln"/>
+  <text x="436" y="170" class="s">calls</text>
   <path d="M820 357 H846" class="ln"/>
   <path d="M850 132 H824" class="dash"/>
   <path d="M200 330 C340 400 420 330 476 300" class="ln"/>

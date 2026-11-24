@@ -23,12 +23,13 @@ test('numeric settlement of 500 reduces Meera\'s balance to ₹732.01', () => {
   assert.equal(db.settlements[0].amount, 500);
 });
 
-test('CURRENT BEHAVIOUR: string "500" is concatenated into totalSettled', () => {
+test('string "500" (from a JSON body) is treated as the number 500', () => {
   const db = makeDb();
   const r = ledger.recordSettlement(db, 1, '500', 'upi', '');
   assert.equal(r.ok, true);
-  assert.equal(db.customers[0].totalSettled, '1200500');
-  assert.equal(db.customers[0].balance, -1198067.99);
+  assert.equal(db.customers[0].totalSettled, 1700);
+  assert.equal(db.customers[0].balance, 732.01);
+  assert.equal(r.settlement.amount, 500);
 });
 
 test('zero and negative amounts are rejected', () => {
@@ -40,12 +41,15 @@ test('zero and negative amounts are rejected', () => {
   });
 });
 
-test('CURRENT BEHAVIOUR: non-numeric amount is accepted and corrupts the balance', () => {
-  const db = makeDb();
-  const r = ledger.recordSettlement(db, 1, 'abc', 'upi', '');
-  assert.equal(r.ok, true);
-  assert.equal(db.customers[0].totalSettled, '1200abc');
-  assert.ok(Number.isNaN(db.customers[0].balance));
+test('non-numeric amounts are rejected and leave the customer unchanged', () => {
+  ['abc', '500abc', null, undefined, NaN, Infinity, {}, []].forEach((amt) => {
+    const db = makeDb();
+    const r = ledger.recordSettlement(db, 1, amt, 'upi', '');
+    assert.equal(r.ok, false, 'amount ' + String(amt));
+    assert.equal(db.customers[0].totalSettled, 1200);
+    assert.equal(db.customers[0].balance, 1232.01);
+    assert.equal(db.settlements.length, 0);
+  });
 });
 
 test('unknown customer is rejected', () => {
